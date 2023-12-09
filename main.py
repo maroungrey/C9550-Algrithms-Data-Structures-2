@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from package import Package
 from truck import Truck
 from csvReader import CSVReader
+from hashTable import HashMap
 
 # Load packages from the Package file
 package_file_path = 'CSV/Package.csv'
@@ -24,10 +25,19 @@ driver2 = "Driver 2"
 driver1_trucks = [truck1, truck3]
 driver2_trucks = [truck2]
 
+# Create a hash map to store packages
+package_hash_map = HashMap()
+
+# Insert packages into the hash map using package IDs as keys
+for package in packages:
+    package_hash_map.insert(package.package_id, package)
+
 # Manually determine which packages go into which truck
-truck2.load_package(packages[14])  # Package 15
-truck2.load_package(packages[23])  # Package 24
-truck2.load_package(packages[21])  # Package 22
+assigned_package_ids = [14, 23, 21]
+for package_id in assigned_package_ids:
+    package = package_hash_map.lookup(package_id)
+    if package:
+        truck2.load_package(package)
 
 # Specify the departure time
 departure_time = datetime.strptime('08:00', '%H:%M')
@@ -43,11 +53,11 @@ for loaded_package in truck1.packages:
 
 print("Truck 2 loaded packages:")
 for loaded_package in truck2.packages:
-    print(f"Package ID: {loaded_package.package_id}, Address: {loaded_package.address}, Estimated Delivery Time: {loaded_package.delivery_time}")
+    print(f"Package ID: {loaded_package.package_id}, Address: {loaded_package.address}")
 
 print("\nTruck 3 loaded packages:")
 for loaded_package in truck3.packages:
-    print(f"Package ID: {loaded_package.package_id}, Address: {loaded_package.address}, Estimated Delivery Time: {loaded_package.delivery_time}")
+    print(f"Package ID: {loaded_package.package_id}, Address: {loaded_package.address}")
 
 
 # Extract the hub address from the first row of distance_data
@@ -80,8 +90,8 @@ def get_distance_from_csv(start_address, end_address, distance_data):
             print(f"Error: Column header not found for {end_address}. Available headers: {available_headers}")
             return None
 
-        # Get the distance from the corresponding cell
-        distance = start_row[end_address]
+        # Get the distance from the corresponding cell and convert it to a float
+        distance = float(start_row[end_address])
 
         return distance
     except StopIteration:
@@ -90,25 +100,30 @@ def get_distance_from_csv(start_address, end_address, distance_data):
     except KeyError:
         print(f"Error: Column header not found for {end_address}")
         return None
+    except ValueError:
+        print(f"Error: Distance value is not a valid number for {start_address} to {end_address}")
+        return None
 
 def get_distance_to_or_from_hub(address, distance_data, to_hub=True):
     try:
         # Find the row for the given address
         row = next(row for row in distance_data if row['Address'] == address)
 
-        # Get the distance to or from the hub
+        # Get the distance to or from the hub and convert it to a float
         distance_key = '4001 South 700 East'  # Adjust this based on the actual header for hub distances
-        if to_hub:
-            return row[distance_key]
-        else:
-            return row[distance_key]
+        distance = float(row[distance_key]) if to_hub else float(row[distance_key])
+
+        return distance
     except StopIteration:
         print(f"Error: No data found for {address}")
         return None
     except KeyError:
         print(f"Error: Column header not found for {address}")
         return None
-
+    except ValueError:
+        print(f"Error: Distance value is not a valid number for {address}")
+        return None
+    
 def send_truck_on_route(truck, distance_data):
     # Get the route addresses dynamically
     route_addresses = extract_route_addresses(truck, distance_data)
@@ -116,6 +131,9 @@ def send_truck_on_route(truck, distance_data):
     # Print distance from the hub to the first location
     hub_to_first_location_distance = get_distance_to_or_from_hub(route_addresses[0], distance_data)
     print(f"Distance from Hub to {route_addresses[0]}: {hub_to_first_location_distance} miles")
+
+    # Initialize current time based on the departure time
+    current_time = truck.time_left_hub
 
     # Iterate through the route
     for i in range(len(route_addresses) - 1):
@@ -125,15 +143,25 @@ def send_truck_on_route(truck, distance_data):
         # Get the distance from the CSV data
         distance = get_distance_from_csv(start_address, end_address, distance_data)
 
-        # Print the distance
-        print(f"Distance from {start_address} to {end_address}: {distance} miles")
+        # Calculate the estimated travel time based on the truck speed (18 miles per hour)
+        travel_time_hours = distance / 18
 
-        # Update the current location of the truck
+        # Calculate the estimated delivery time for the current package
+        delivery_time = current_time + timedelta(hours=travel_time_hours)
+
+        # Print the distance and estimated delivery time
+        print(f"Distance from {start_address} to {end_address}: {distance} miles, Estimated Delivery Time: {delivery_time.strftime('%I:%M %p')}")
+
+        # Update the current location and time of the truck
         truck.update_current_location(end_address)
+        current_time = delivery_time
 
     # Print distance from the last location back to the hub
     last_location_to_hub_distance = get_distance_to_or_from_hub(route_addresses[-1], distance_data, to_hub=False)
-    print(f"Distance from {route_addresses[-1]} to Hub: {last_location_to_hub_distance} miles")
+    last_location_to_hub_travel_time = last_location_to_hub_distance / 18
+    last_location_to_hub_delivery_time = current_time + timedelta(hours=last_location_to_hub_travel_time)
+    print(f"Distance from {route_addresses[-1]} to Hub: {last_location_to_hub_distance} miles, Estimated Delivery Time: {last_location_to_hub_delivery_time.strftime('%I:%M %p')}")
 
 # Example of sending truck2 on its route
+print("Distances:")
 send_truck_on_route(truck2, distance_data)

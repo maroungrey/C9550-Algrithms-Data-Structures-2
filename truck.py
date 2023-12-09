@@ -26,12 +26,7 @@ class Truck:
     def set_path(self, addresses):
         self.path = addresses
 
-    def deliver_packages(self):
-        delivery_time = self.time_left_hub
-        for package in self.packages:
-            delivery_time += timedelta(minutes=15)  # Assuming 15 minutes for each delivery
-            package.delivery_time = delivery_time
-        self.time_left_hub = delivery_time  # Update truck's time
+
 
     def update_current_location(self, new_location):
         self.current_location = new_location
