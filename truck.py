@@ -7,6 +7,7 @@ class Truck:
         self.packages = []
         self.time_left_hub = None
         self.path = []
+        self.current_location = None
 
     def load_package(self, package):
         if len(self.packages) < self.capacity:
@@ -31,3 +32,6 @@ class Truck:
             delivery_time += timedelta(minutes=15)  # Assuming 15 minutes for each delivery
             package.delivery_time = delivery_time
         self.time_left_hub = delivery_time  # Update truck's time
+
+    def update_current_location(self, new_location):
+        self.current_location = new_location
