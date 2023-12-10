@@ -1,3 +1,8 @@
+# Student ID: 010309427
+# Maroun Barqawi
+# C950 Data Structures And Algorithms 2
+
+
 from datetime import datetime, timedelta
 from package import Package
 from truck import Truck
@@ -16,14 +21,6 @@ distance_data = CSVReader.read_distance(distance_file_path)
 truck1 = Truck(truck_id=1)
 truck2 = Truck(truck_id=2)
 truck3 = Truck(truck_id=3)
-
-# Create two drivers
-driver1 = "Driver 1"
-driver2 = "Driver 2"
-
-# Assign trucks to drivers
-driver1_trucks = [truck1, truck3]
-driver2_trucks = [truck2]
 
 # Create a hash map to store packages
 package_hash_map = HashMap()
@@ -46,41 +43,31 @@ for truck, package_ids in assigned_packages.items():
         if package:
             truck.load_package(package)
 
-
-def set_departure_and_get_arrival(truck, departure_time, distance_data):
-    truck.set_time_left_hub(departure_time)
-    finish_time = send_truck_on_route(truck, distance_data)
-    return truck.time_left_hub, finish_time
-
-
 # Print information about loaded packages in each truck
-print()
-print("Truck 1 loaded packages at 8:35 AM. ID:", end=" ")
+
+print("\nTruck 1 loaded packages at 8:35 AM. ID:", end=" ")
 for loaded_package in truck1.packages:
     print(f"{loaded_package.package_id}", end=" ")
-print()
 
-print("Truck 2 loaded packages at 9:35 AM. ID:", end=" ")
+
+print("\nTruck 2 loaded packages at 9:35 AM. ID:", end=" ")
 for loaded_package in truck2.packages:
     print(f"{loaded_package.package_id}", end=" ")
-print()
 
-print("Truck 3 loaded packages at 12:46 PM. ID:", end=" ")
+
+print("\nTruck 3 loaded packages at 12:46 PM. ID:", end=" ")
 for loaded_package in truck3.packages:
     print(f"{loaded_package.package_id}", end=" ")
-print()
+
 
 # Extract the hub address from the first row of distance_data
 HUB_ADDRESS = distance_data[0]['Address']
-
+all_trucks_distance = 0
+print()
 
 def extract_route_addresses(truck, distance_data):
     # Extract unique addresses from loaded packages
     addresses = set(package.address for package in truck.packages)
-
-    # Add the hub address as the starting point if it's not already in the set
-    if HUB_ADDRESS not in addresses:
-        addresses.add(HUB_ADDRESS)
 
     # Convert set to a list
     addresses_list = list(addresses)
@@ -129,8 +116,8 @@ def get_distance_to_or_from_hub(address, distance_data, to_hub=True):
         row = next(row for row in distance_data if row['Address'] == address)
 
         # Get the distance to or from the hub and convert it to a float
-        distance_key = '4001 South 700 East'  # Adjust this based on the actual header for hub distances
-        hub_distance_key = '4001 South 700 East'  # Adjust this based on the actual header for hub distances
+        distance_key = '4001 South 700 East'
+        hub_distance_key = '4001 South 700 East'
         distance = float(row[hub_distance_key]) if to_hub else float(row[distance_key])
 
         return distance
@@ -143,8 +130,6 @@ def get_distance_to_or_from_hub(address, distance_data, to_hub=True):
     except ValueError:
         print(f"Error: Distance value is not a valid number for {address}")
         return None
-
-all_trucks_distance = 0
 
 def send_truck_on_route(truck, distance_data):
     # Get the route addresses dynamically
@@ -202,10 +187,10 @@ def send_truck_on_route(truck, distance_data):
     last_location_to_hub_travel_time = last_location_to_hub_distance / 18
     last_location_to_hub_delivery_time = current_time + timedelta(hours=last_location_to_hub_travel_time)
     total_distance += last_location_to_hub_distance
+    
     global all_trucks_distance 
     all_trucks_distance += total_distance
     
-
     print_delivery_info(None, route_addresses[-1], HUB_ADDRESS, last_location_to_hub_distance, last_location_to_hub_delivery_time)
     print(f"Total Distance Traveled: {total_distance:.1f} miles")
 
