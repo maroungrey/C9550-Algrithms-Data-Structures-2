@@ -98,7 +98,6 @@ def extract_route_addresses(truck, distance_data):
 
     return route_addresses
 
-
 def get_distance_from_csv(start_address, end_address, distance_data):
     try:
         # Find the row for the start_address
@@ -158,13 +157,13 @@ def send_truck_on_route(truck, distance_data):
             package_ids_str = ', '.join(str(pkg_id) for pkg_id in package_ids)
             print(f"Package ID: {package_ids_str}, Distance from {start_address} to {end_address}: {distance} miles, Estimated Delivery Time: {delivery_time.strftime('%I:%M %p')}")
         else:
-            print(f"Package ID: None, Distance from {start_address} to {end_address}: {distance} miles, Estimated Delivery Time: {delivery_time.strftime('%I:%M %p')}")
+            print(f"Finished Delivery. Distance from {start_address} to {end_address}: {distance} miles, Estimated Arrival Time: {delivery_time.strftime('%I:%M %p')}")
 
     # Print the time when the truck starts driving
     print(f"\nTruck {truck.truck_id} starts driving at: {current_time.strftime('%I:%M %p')}")
 
     # Iterate through the route starting from the second address
-    for i in range(1, len(route_addresses)):
+    for i in range(2, len(route_addresses)):
         start_address = route_addresses[i - 1]
         end_address = route_addresses[i]
 
@@ -217,7 +216,8 @@ truck2.set_time_left_hub(departure_time)
 
 # Send trucks on their routes
 for truck in [truck1, truck2]:
-    print(f"\nTruck {truck.truck_id} Distance & Arrival Time:")
+    print()
+    print(f"\nTruck {truck.truck_id}")
     last_delivery_time = send_truck_on_route(truck, distance_data)
     print(f"Truck {truck.truck_id} returned to Hub at: {last_delivery_time.strftime('%I:%M %p')}")
 
@@ -225,6 +225,8 @@ for truck in [truck1, truck2]:
 truck3.set_time_left_hub(last_delivery_time)
 
 # Send truck3 on its route
-print(f"\nTruck {truck3.truck_id} Distance & Arrival Time:")
+print()
+print(f"\nTruck {truck3.truck_id}")
 last_delivery_time_truck3 = send_truck_on_route(truck3, distance_data)
+print(f"Truck {truck3.truck_id} returned to Hub at: {last_delivery_time_truck3.strftime('%I:%M %p')}")
 # print(f"Last Location to Hub Delivery Time: {last_delivery_time_truck3.strftime('%I:%M %p')}")
