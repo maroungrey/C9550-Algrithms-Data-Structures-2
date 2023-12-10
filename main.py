@@ -3,7 +3,6 @@ from package import Package
 from truck import Truck
 from csvReader import CSVReader
 from hashTable import HashMap
-import logging
 
 # Load packages from the Package file
 package_file_path = 'CSV/Package.csv'
@@ -50,8 +49,8 @@ for truck, package_ids in assigned_packages.items():
 
 def set_departure_and_get_arrival(truck, departure_time, distance_data):
     truck.set_time_left_hub(departure_time)
-    send_truck_on_route(truck, distance_data)
-    return truck.time_left_hub
+    finish_time = send_truck_on_route(truck, distance_data)
+    return truck.time_left_hub, finish_time
 
 
 # Print information about loaded packages in each truck
@@ -174,14 +173,15 @@ def send_truck_on_route(truck, distance_data):
         current_time = delivery_time
 
     # Print total distance from the last location back to the hub
-    last_location = route_addresses[-1]
-    last_location_to_hub_distance = get_distance_to_or_from_hub(last_location, distance_data, to_hub=False)
+    last_location_to_hub_distance = get_distance_to_or_from_hub(route_addresses[-1], distance_data, to_hub=False)
     last_location_to_hub_travel_time = last_location_to_hub_distance / 18
     last_location_to_hub_delivery_time = current_time + timedelta(hours=last_location_to_hub_travel_time)
     total_distance += last_location_to_hub_distance
 
-    print_delivery_info(None, last_location, f"{HUB_ADDRESS}", last_location_to_hub_distance, last_location_to_hub_delivery_time)
+    print_delivery_info(None, route_addresses[-1], HUB_ADDRESS, last_location_to_hub_distance, last_location_to_hub_delivery_time)
     print(f"Total Distance Traveled: {total_distance:.1f} miles, Finish Time: {last_location_to_hub_delivery_time.strftime('%I:%M %p')}")
+
+    return last_location_to_hub_delivery_time
 
 
 # Specify the departure time
@@ -191,8 +191,16 @@ departure_time = datetime.strptime('08:00', '%H:%M')
 truck1.set_time_left_hub(departure_time)
 truck2.set_time_left_hub(departure_time)
 
-
 # Send trucks on their routes
 for truck in [truck1, truck2]:
     print(f"\nTruck {truck.truck_id} Distance & Arrival Time:")
-    send_truck_on_route(truck, distance_data)
+    last_delivery_time = send_truck_on_route(truck, distance_data)
+    print(f"Last Location to Hub Delivery Time: {last_delivery_time.strftime('%I:%M %p')}")
+
+# Set the departure time for truck3 based on the last delivery time
+truck3.set_time_left_hub(last_delivery_time)
+
+# Send truck3 on its route
+print(f"\nTruck {truck3.truck_id} Distance & Arrival Time:")
+last_delivery_time_truck3 = send_truck_on_route(truck3, distance_data)
+print(f"Last Location to Hub Delivery Time: {last_delivery_time_truck3.strftime('%I:%M %p')}")
