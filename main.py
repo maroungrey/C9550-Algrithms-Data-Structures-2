@@ -77,15 +77,27 @@ HUB_ADDRESS = distance_data[0]['Address']
 def extract_route_addresses(truck, distance_data):
     # Extract unique addresses from loaded packages
     addresses = set(package.address for package in truck.packages)
-    
+
     # Add the hub address as the starting point if it's not already in the set
     if HUB_ADDRESS not in addresses:
         addresses.add(HUB_ADDRESS)
-    
-    # Convert set to a list and sort it for the route
-    route_addresses = sorted(list(addresses), key=lambda x: x != HUB_ADDRESS)
-    
+
+    # Convert set to a list
+    addresses_list = list(addresses)
+
+    # Find the optimal route using a greedy algorithm based on the Distance.csv file
+    current_address = HUB_ADDRESS
+    route_addresses = [current_address]
+    remaining_addresses = set(addresses_list)
+
+    while remaining_addresses:
+        closest_address = min(remaining_addresses, key=lambda addr: get_distance_from_csv(current_address, addr, distance_data))
+        route_addresses.append(closest_address)
+        remaining_addresses.remove(closest_address)
+        current_address = closest_address
+
     return route_addresses
+
 
 def get_distance_from_csv(start_address, end_address, distance_data):
     try:
@@ -141,17 +153,24 @@ def send_truck_on_route(truck, distance_data):
     current_time = truck.time_left_hub
     total_distance = 0
 
-    def print_delivery_info(package_id, start_address, end_address, distance, delivery_time):
-        print(f"Package ID: {package_id}, Distance from {start_address} to {end_address}: {distance} miles, Estimated Delivery Time: {delivery_time.strftime('%I:%M %p')}")
+    def print_delivery_info(package_ids, start_address, end_address, distance, delivery_time):
+        if package_ids:
+            package_ids_str = ', '.join(str(pkg_id) for pkg_id in package_ids)
+            print(f"Package ID: {package_ids_str}, Distance from {start_address} to {end_address}: {distance} miles, Estimated Delivery Time: {delivery_time.strftime('%I:%M %p')}")
+        else:
+            print(f"Package ID: None, Distance from {start_address} to {end_address}: {distance} miles, Estimated Delivery Time: {delivery_time.strftime('%I:%M %p')}")
+
+    # Print the time when the truck starts driving
+    print(f"\nTruck {truck.truck_id} starts driving at: {current_time.strftime('%I:%M %p')}")
 
     # Iterate through the route starting from the second address
     for i in range(1, len(route_addresses)):
         start_address = route_addresses[i - 1]
         end_address = route_addresses[i]
 
-        # Get the package ID for the current address
-        package = next((pkg for pkg in truck.packages if pkg.address == end_address), None)
-        package_id = package.package_id if package else None
+        # Get all packages with the current address
+        packages_at_address = [pkg for pkg in truck.packages if pkg.address == end_address]
+        package_ids = [package.package_id for package in packages_at_address]
 
         # Get the distance from the CSV data
         distance = get_distance_from_csv(start_address, end_address, distance_data)
@@ -163,7 +182,7 @@ def send_truck_on_route(truck, distance_data):
         delivery_time = current_time + timedelta(hours=travel_time_hours)
 
         # Print the distance and estimated delivery time
-        print_delivery_info(package_id, start_address, end_address, distance, delivery_time)
+        print_delivery_info(package_ids, start_address, end_address, distance, delivery_time)
 
         # Update the total distance
         total_distance += distance
@@ -172,6 +191,11 @@ def send_truck_on_route(truck, distance_data):
         truck.update_current_location(end_address)
         current_time = delivery_time
 
+
+    # Update the current location and time of the truck
+    truck.update_current_location(end_address)
+    current_time = delivery_time
+
     # Print total distance from the last location back to the hub
     last_location_to_hub_distance = get_distance_to_or_from_hub(route_addresses[-1], distance_data, to_hub=False)
     last_location_to_hub_travel_time = last_location_to_hub_distance / 18
@@ -179,7 +203,7 @@ def send_truck_on_route(truck, distance_data):
     total_distance += last_location_to_hub_distance
 
     print_delivery_info(None, route_addresses[-1], HUB_ADDRESS, last_location_to_hub_distance, last_location_to_hub_delivery_time)
-    print(f"Total Distance Traveled: {total_distance:.1f} miles, Finish Time: {last_location_to_hub_delivery_time.strftime('%I:%M %p')}")
+    print(f"Total Distance Traveled: {total_distance:.1f} miles")
 
     return last_location_to_hub_delivery_time
 
@@ -195,7 +219,7 @@ truck2.set_time_left_hub(departure_time)
 for truck in [truck1, truck2]:
     print(f"\nTruck {truck.truck_id} Distance & Arrival Time:")
     last_delivery_time = send_truck_on_route(truck, distance_data)
-    print(f"Last Location to Hub Delivery Time: {last_delivery_time.strftime('%I:%M %p')}")
+    print(f"Truck {truck.truck_id} returned to Hub at: {last_delivery_time.strftime('%I:%M %p')}")
 
 # Set the departure time for truck3 based on the last delivery time
 truck3.set_time_left_hub(last_delivery_time)
@@ -203,4 +227,4 @@ truck3.set_time_left_hub(last_delivery_time)
 # Send truck3 on its route
 print(f"\nTruck {truck3.truck_id} Distance & Arrival Time:")
 last_delivery_time_truck3 = send_truck_on_route(truck3, distance_data)
-print(f"Last Location to Hub Delivery Time: {last_delivery_time_truck3.strftime('%I:%M %p')}")
+# print(f"Last Location to Hub Delivery Time: {last_delivery_time_truck3.strftime('%I:%M %p')}")
