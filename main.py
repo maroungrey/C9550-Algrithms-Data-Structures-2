@@ -34,8 +34,8 @@ for package in packages:
 
 # Manually determine which packages go into which truck
 assigned_packages = {
-    truck1: [1, 2, 4, 5, 7, 10, 11, 12, 17, 18, 23, 27, 29, 30, 33, 34],
-    truck2: [15, 22, 24, 3, 14, 19, 16, 13, 20, 36, 38, 21, 37, 35, 39, 40],
+    truck1: [15, 22, 24, 3, 14, 19, 16, 13, 20, 36, 38, 21, 37, 35, 39, 40],
+    truck2: [1, 2, 4, 5, 7, 10, 11, 12, 17, 18, 23, 27, 29, 30, 33, 34],
     truck3: [6, 9, 25, 26, 28, 32, 8, 31],
 }
 
@@ -55,17 +55,17 @@ def set_departure_and_get_arrival(truck, departure_time, distance_data):
 
 # Print information about loaded packages in each truck
 print()
-print("Truck 1 loaded packages:", end=" ")
+print("Truck 1 loaded packages at 8:35 AM. ID:", end=" ")
 for loaded_package in truck1.packages:
     print(f"{loaded_package.package_id}", end=" ")
 print()
 
-print("Truck 2 loaded packages:", end=" ")
+print("Truck 2 loaded packages at 9:35 AM. ID:", end=" ")
 for loaded_package in truck2.packages:
     print(f"{loaded_package.package_id}", end=" ")
 print()
 
-print("Truck 3 loaded packages:", end=" ")
+print("Truck 3 loaded packages at 12:46 PM. ID:", end=" ")
 for loaded_package in truck3.packages:
     print(f"{loaded_package.package_id}", end=" ")
 print()
@@ -144,6 +144,8 @@ def get_distance_to_or_from_hub(address, distance_data, to_hub=True):
         print(f"Error: Distance value is not a valid number for {address}")
         return None
 
+all_trucks_distance = 0
+
 def send_truck_on_route(truck, distance_data):
     # Get the route addresses dynamically
     route_addresses = extract_route_addresses(truck, distance_data)
@@ -200,6 +202,9 @@ def send_truck_on_route(truck, distance_data):
     last_location_to_hub_travel_time = last_location_to_hub_distance / 18
     last_location_to_hub_delivery_time = current_time + timedelta(hours=last_location_to_hub_travel_time)
     total_distance += last_location_to_hub_distance
+    global all_trucks_distance 
+    all_trucks_distance += total_distance
+    
 
     print_delivery_info(None, route_addresses[-1], HUB_ADDRESS, last_location_to_hub_distance, last_location_to_hub_delivery_time)
     print(f"Total Distance Traveled: {total_distance:.1f} miles")
@@ -208,11 +213,12 @@ def send_truck_on_route(truck, distance_data):
 
 
 # Specify the departure time
-departure_time = datetime.strptime('08:00', '%H:%M')
+departure_time_truck1 = datetime.strptime('08:35', '%H:%M')
+departure_time_truck2 = datetime.strptime('09:35', '%H:%M')
 
 # Set the departure time
-truck1.set_time_left_hub(departure_time)
-truck2.set_time_left_hub(departure_time)
+truck1.set_time_left_hub(departure_time_truck1)
+truck2.set_time_left_hub(departure_time_truck2)
 
 # Send trucks on their routes
 for truck in [truck1, truck2]:
@@ -229,4 +235,5 @@ print()
 print(f"\nTruck {truck3.truck_id}")
 last_delivery_time_truck3 = send_truck_on_route(truck3, distance_data)
 print(f"Truck {truck3.truck_id} returned to Hub at: {last_delivery_time_truck3.strftime('%I:%M %p')}")
-# print(f"Last Location to Hub Delivery Time: {last_delivery_time_truck3.strftime('%I:%M %p')}")
+
+print(f"\nTotal Distance for all trucks: {all_trucks_distance:.1f} miles.")
