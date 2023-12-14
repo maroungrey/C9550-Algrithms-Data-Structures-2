@@ -212,29 +212,129 @@ for truck in [truck1, truck2, truck3]:
     for package in truck.packages:
         package.update_status("En route", truck.time_left_hub)
 
-# Print status of the packages
-print()
-print("\nTimestamps of the packages:")
-print()
-# Sort and print
-all_packages = truck1.packages + truck2.packages + truck3.packages
-all_packages.sort(key=lambda x: x.package_id) 
 
-for package in all_packages:
-    output = f"Package {package.package_id}:  "
-    output += "8:00 AM At hub  "
-    
-    for status, time in reversed(package.status_updates):
-        if time is None:
-            time_str = "N/A"
+while True:
+    print()
+    print("------------------------------------------------")
+    print()
+    print("Select an option:")
+    print()
+    print("1. View status of specific package at given time") 
+    print("2. View status of all packages at given time")
+    print("3. View timestamps for all packages at all times")
+
+    choice = input("\nEnter your choice 1, 2, 3 or quit to exit: ")
+    all_packages = truck1.packages + truck2.packages + truck3.packages
+    print()
+
+    if choice.lower() == 'q' or choice.lower() == 'quit':
+        print("Exited")
+        break
+
+    if choice == "1":
+
+        while True:
+                # Get package ID and time from user
+                package_id = input("Enter package ID: ")
+                input_time = input("Enter time in 24-hour format (for example: 8:20): ")
+                
+                try:
+                    # Convert to datetime
+                    input_time = datetime.strptime(input_time, '%H:%M')
+                    break
+                except ValueError:
+                    print("Invalid time format. Please try again.")
+
+        # Find package
+        package = None
+        for pkg in all_packages:
+            if pkg.package_id == int(package_id):
+                package = pkg
+                break
+
+        if package:
+            # Get status at time
+            status_at_time = package.initial_status  
+            for status, update_time in package.status_updates:
+
+                if update_time <= input_time:
+                    # Set status
+                    status_at_time = status
+
+                # Convert input time to string
+                input_time_str = input_time.isoformat()
+                update_time_str = update_time.isoformat()
+
+                if update_time_str <= input_time_str:
+                    status_at_time = status
+
+                # Break the loop if "Delivered" status is encountered
+                if status == "Delivered":
+                    break
+
+            # Convert time to datetime object
+            input_time_str = datetime.strftime(input_time,"%I:%M %p")        
+            print(f"\nPackage ID: {package_id} status at {input_time_str}: {status_at_time}")
+        
         else:
-            time_str = datetime.strftime(time, '%I:%M %p')
+            print(f"Invalid package ID: {package_id}")
 
-        status_string = f"{time_str} {status}"
-        output += status_string + "  "
+    elif choice == "2":
 
-        # Break the loop if "Delivered" status is encountered
-        if status == "Delivered":
-            break
+        while True:
+            input_time = input("Enter time in 24-hour format (for example: 8:20): ")
+
+            try: 
+                input_time = datetime.strptime(input_time, '%H:%M')
+                break
+            except ValueError:
+                print("Invalid time format. Please try again.")
+
+        print(f"\nPackage statuses at {input_time:%I:%M %p}:")
+        
+        all_packages.sort(key=lambda x: x.package_id)
+
+        for package in all_packages:
+
+            truck = next((t for t in [truck1, truck2, truck3] if package in t.packages), None)
+            if truck and truck.time_left_hub <= input_time:
+                status_at_time = "En route"
+            else:
+                # original status logic
+                status_at_time = package.initial_status  
+                for status, update_time in package.status_updates:
+                    if update_time <= input_time:
+                        status_at_time = status
+                    if status == "Delivered":
+                        break
+
+            print(f"Package ID {package.package_id}: {status_at_time}")
+
+    elif choice == "3":
+        # Print status of the packages
+        print()
+        print("\nTimestamps of the packages:")
+        print()
+        # Sort and print
+        all_packages.sort(key=lambda x: x.package_id) 
+
+        for package in all_packages:
+            output = f"Package {package.package_id}:  "
+            output += f"8:00 AM {package.initial_status}  "
+            
+            for status, time in reversed(package.status_updates):
+                if time is None:
+                    time_str = "N/A"
+                else:
+                    time_str = datetime.strftime(time, '%I:%M %p')
+
+                status_string = f"{time_str} {status}"
+                output += status_string + "  "
+
+                # Break the loop if "Delivered" status is encountered
+                if status == "Delivered":
+                    break
+            
+            print(output)
+
     
-    print(output)

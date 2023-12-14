@@ -1,5 +1,6 @@
 class Package:
     def __init__(self, package_id, address, city, zip_code, weight, special_note=None):
+        self.initial_status = "At hub" 
         self.status_updates = []
         self.package_id = package_id
         self.address = address
